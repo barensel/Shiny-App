@@ -1,5 +1,6 @@
 library(shiny)
 library(datasets)
+library(ggplot2)
 
 # Data pre-processing ----
 # Tweak the "am" variable to have nicer factor labels -- since this
@@ -25,10 +26,7 @@ ui <- fluidPage(
       selectInput("variable", "Variable:",
                   c("Cylinders" = "cyl",
                     "Transmission" = "am",
-                    "Gears" = "gear")),
-      
-      # Input: Checkbox for whether outliers should be included ----
-      checkboxInput("outliers", "Show outliers", TRUE)
+                    "Gears" = "gear"))
       
     ),
     
@@ -52,7 +50,8 @@ server <- function(input, output) {
   # This is in a reactive expression since it is shared by the
   # output$caption and output$mpgPlot functions
   formulaText <- reactive({
-    paste("mpg ~", input$variable)
+    paste("~", input$variable)
+    
   })
   
   # Return the formula text for printing as a caption ----
@@ -62,14 +61,18 @@ server <- function(input, output) {
   
   # Generate a plot of the requested variable against mpg ----
   # and only exclude outliers if requested
-  output$mpgPlot <- renderPlot({
-    boxplot(as.formula(formulaText()),
-            data = mpgData,
-            outline = input$outliers,
-            col = "#75AADB", pch = 19)
-  })
+  output$mpgPlot <- renderPlot(ggplot(data = mpgData)+
+                                 geom_histogram(mapping = aes(x = mpg),binwidth = 5, position = "stack",color= "white", fill="red")+
+                                 facet_wrap(as.formula(formulaText()), nrow = 3) 
   
+
+  )                                                       
 }
+
+
+
+
+
 
 # Create Shiny app ----
 shinyApp(ui, server)
